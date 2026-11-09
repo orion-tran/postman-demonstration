@@ -30,7 +30,7 @@ lock = threading.Lock()  # prevents requests from making several winners
 def makeTicket():
     global attempts, winner, ticketCounter
     data = request.get_json(silent=True) or {}
-    student_name = data.get("student_name", "Anonymous")
+    student_name = data.get("student_name")
     with lock:
         if winner is not None:
             return jsonify(
@@ -40,6 +40,16 @@ def makeTicket():
                     "winner": winner,
                 }
             ), 409
+
+        # require a name
+        if student_name is None:
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "You must specify a name (or nickname) to participate in the lottery",
+                }
+            ), 406
+
         attempts += 1
         ticketCounter += 1
         probability = 0.03 if attempts <= 10 else 0.15
@@ -79,4 +89,4 @@ def lotteryStatus():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False)
